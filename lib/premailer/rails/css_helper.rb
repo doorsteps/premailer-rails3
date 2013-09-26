@@ -11,14 +11,15 @@ class Premailer
 
       STRATEGIES = [
         CSSLoaders::CacheLoader,
+        CSSLoaders::UrlLoader,
         CSSLoaders::AssetPipelineLoader,
         CSSLoaders::FileSystemLoader
       ]
 
       # Returns all linked CSS files concatenated as string.
-      def css_for_doc(doc)
+      def css_for_doc(doc, strategies = STRATEGIES)
         urls = css_urls_in_doc(doc)
-        urls.map { |url| load_css(url) }.join("\n")
+        urls.map { |url| load_css(url, strategies) }.join("\n")
       end
 
       private
@@ -29,25 +30,11 @@ class Premailer
         end
       end
 
-      def load_css(url)
-        path = extract_path(url)
-
-        @cache[path] = STRATEGIES.each do |strategy|
-                         css = strategy.load(path)
+      def load_css(url, strategies = STRATEGIES)
+        @cache[url] = strategies.each do |strategy|
+                         css = strategy.load(url)
                          break css if css
                        end
-      end
-
-      # Extracts the path of a url.
-      def extract_path(url)
-        if url.is_a? String
-          # Remove everything after ? including ?
-          url = url[0..(url.index('?') - 1)] if url.include? '?'
-          # Remove the host
-          url = url.sub(/^https?\:\/\/[^\/]*/, '') if url.index('http') == 0
-        end
-
-        url
       end
     end
   end

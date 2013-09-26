@@ -5,12 +5,20 @@ describe Premailer::Rails::CSSHelper do
   after { Premailer::Rails::CSSHelper.send(:instance_variable_set, '@cache', {}) }
 
   def load_css(path)
-    Premailer::Rails::CSSHelper.send(:load_css, path)
+    Premailer::Rails::CSSHelper.send(:load_css, path, strategies)
   end
 
   def css_for_doc(doc)
-    Premailer::Rails::CSSHelper.css_for_doc(doc)
+    Premailer::Rails::CSSHelper.css_for_doc(doc, strategies)
   end
+
+  let(:basic_strategies) { [
+        Premailer::Rails::CSSLoaders::CacheLoader,
+        Premailer::Rails::CSSLoaders::AssetPipelineLoader,
+        Premailer::Rails::CSSLoaders::FileSystemLoader
+  ] }
+
+  let(:strategies) { basic_strategies }
 
   describe '#css_for_doc' do
     let(:html) { Fixtures::HTML.with_css_links(*files) }
@@ -22,11 +30,11 @@ describe Premailer::Rails::CSSHelper do
       it 'should return the content of both files concatenated' do
         Premailer::Rails::CSSHelper
           .expects(:load_css)
-          .with('http://example.com/stylesheets/base.css')
+          .with('http://example.com/stylesheets/base.css', strategies)
           .returns('content of base.css')
         Premailer::Rails::CSSHelper
           .expects(:load_css)
-          .with('http://example.com/stylesheets/font.css')
+          .with('http://example.com/stylesheets/font.css', strategies)
           .returns('content of font.css')
 
         css_for_doc(doc).should == "content of base.css\ncontent of font.css"
